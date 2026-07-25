@@ -21,22 +21,7 @@ android {
         }
     }
 
-    signingConfigs {
-        val keystoreFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
-        if (keystoreFile.exists()) {
-            getByName("debug") {
-                storeFile = keystoreFile
-            }
-        }
-    }
-
     buildTypes {
-        getByName("debug") {
-            val keystoreFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
-            if (!keystoreFile.exists()) {
-                signingConfig = null
-            }
-        }
         release {
             isMinifyEnabled = true
             proguardFiles(
