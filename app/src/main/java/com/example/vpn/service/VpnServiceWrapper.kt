@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import libv2ray.Libv2ray
 import libv2ray.CoreController
 import libv2ray.CoreCallbackHandler
+import kotlin.concurrent.thread
 
 class VpnServiceWrapper : VpnService() {
     private var vpnInterface: ParcelFileDescriptor? = null
@@ -39,14 +40,13 @@ class VpnServiceWrapper : VpnService() {
         val notification = NotificationCompat.Builder(this, "vpn_channel")
             .setContentTitle("VPN is Active")
             .setContentText("Connected to proxy")
-            .setSmallIcon(android.R.drawable.ic_secure)
+            .setSmallIcon(android.R.drawable.ic_dialog_dialer)
             .build()
         startForeground(1, notification)
 
         try {
             vpnInterface?.close()
             
-            // Standard Android VpnService builder for a custom tunnel
             val builder = Builder()
                 .setSession("NexusProxy")
                 .addAddress("10.0.0.2", 24)
@@ -61,10 +61,8 @@ class VpnServiceWrapper : VpnService() {
             if (fd != null) {
                 Log.d("VpnServiceWrapper", "VPN Established, FileDescriptor: $fd")
                 
-                // Initialize Core Environment
                 Libv2ray.initCoreEnv(applicationContext.filesDir.absolutePath, "nexus-proxy-key")
                 
-                // Initialize Controller
                 coreController = Libv2ray.newCoreController(object : CoreCallbackHandler {
                     override fun onEmitStatus(l: Long, s: String?): Long {
                         Log.d("VpnServiceWrapper", "Status: $l $s")
@@ -80,8 +78,13 @@ class VpnServiceWrapper : VpnService() {
                     }
                 })
                 
-                // Start Loop
-                coreController?.startLoop(config)
+                thread {
+                    try {
+                        coreController?.startLoop(config)
+                    } catch (e: Exception) {
+                        Log.e("VpnServiceWrapper", "startLoop error", e)
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e("VpnServiceWrapper", "Failed to establish VPN", e)

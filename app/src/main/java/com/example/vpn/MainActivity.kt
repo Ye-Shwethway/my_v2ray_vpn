@@ -23,7 +23,6 @@ import com.example.vpn.ui.VpnViewModel
 import com.example.vpn.ui.theme.VPNTheme
 
 class MainActivity : ComponentActivity() {
-
     private val viewModel: VpnViewModel by viewModels()
 
     private val vpnPermissionLauncher = registerForActivityResult(
@@ -75,13 +74,49 @@ class MainActivity : ComponentActivity() {
     private fun startVpnService() {
         viewModel.setConnected(true)
         val activeNode = viewModel.activeNode.value
-        val config = activeNode?.address ?: "default_config"
+        val address = activeNode?.address ?: "127.0.0.1"
+        val port = activeNode?.port ?: 443
+        val uuid = activeNode?.uuid ?: "00000000-0000-0000-0000-000000000000"
+        
+        val config = """
+        {
+          "log": { "loglevel": "warning" },
+          "inbounds": [
+            {
+              "port": 10808,
+              "listen": "127.0.0.1",
+              "protocol": "socks",
+              "settings": { "auth": "noauth", "udp": true }
+            }
+          ],
+          "outbounds": [
+            {
+              "protocol": "vmess",
+              "settings": {
+                "vnext": [
+                  {
+                    "address": "$address",
+                    "port": $port,
+                    "users": [
+                      { "id": "$uuid", "alterId": 0, "security": "auto" }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+        """.trimIndent()
         
         val intent = Intent(this, VpnServiceWrapper::class.java).apply {
             action = VpnServiceWrapper.ACTION_START
             putExtra(VpnServiceWrapper.EXTRA_NODE_CONFIG, config)
         }
-        startService(intent)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
     }
 
     private fun stopVpnService() {
@@ -89,6 +124,10 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, VpnServiceWrapper::class.java).apply {
             action = VpnServiceWrapper.ACTION_STOP
         }
-        startService(intent)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
     }
 }
