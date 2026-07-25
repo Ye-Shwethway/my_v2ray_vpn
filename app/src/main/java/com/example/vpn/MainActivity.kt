@@ -112,11 +112,7 @@ class MainActivity : ComponentActivity() {
             action = VpnServiceWrapper.ACTION_START
             putExtra(VpnServiceWrapper.EXTRA_NODE_CONFIG, config)
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
+        startService(intent)
     }
 
     private fun stopVpnService() {
@@ -124,10 +120,6 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, VpnServiceWrapper::class.java).apply {
             action = VpnServiceWrapper.ACTION_STOP
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
+        startService(intent)
     }
 }

@@ -1,18 +1,15 @@
 package com.example.vpn.service
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
 import android.content.Intent
 import android.net.VpnService
-import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import libv2ray.Libv2ray
 import libv2ray.CoreController
 import libv2ray.CoreCallbackHandler
 import kotlin.concurrent.thread
+import java.io.File
+import java.io.FileOutputStream
 
 class VpnServiceWrapper : VpnService() {
     private var vpnInterface: ParcelFileDescriptor? = null
@@ -36,14 +33,6 @@ class VpnServiceWrapper : VpnService() {
     }
 
     private fun startVpn(config: String) {
-        createNotificationChannel()
-        val notification = NotificationCompat.Builder(this, "vpn_channel")
-            .setContentTitle("VPN is Active")
-            .setContentText("Connected to proxy")
-            .setSmallIcon(android.R.drawable.ic_dialog_dialer)
-            .build()
-        startForeground(1, notification)
-
         try {
             vpnInterface?.close()
             
@@ -60,6 +49,9 @@ class VpnServiceWrapper : VpnService() {
             val fd = vpnInterface?.fd
             if (fd != null) {
                 Log.d("VpnServiceWrapper", "VPN Established, FileDescriptor: $fd")
+                
+                copyAsset("geoip.dat")
+                copyAsset("geosite.dat")
                 
                 Libv2ray.initCoreEnv(applicationContext.filesDir.absolutePath, "nexus-proxy-key")
                 
@@ -92,6 +84,21 @@ class VpnServiceWrapper : VpnService() {
         }
     }
 
+    private fun copyAsset(filename: String) {
+        try {
+            val outFile = File(applicationContext.filesDir, filename)
+            if (!outFile.exists()) {
+                applicationContext.assets.open(filename).use { inputStream ->
+                    FileOutputStream(outFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("VpnServiceWrapper", "Failed to copy asset: $filename", e)
+        }
+    }
+
     private fun stopVpn() {
         try {
             coreController?.stopLoop()
@@ -102,19 +109,6 @@ class VpnServiceWrapper : VpnService() {
         } catch (e: Exception) {
             Log.e("VpnServiceWrapper", "Failed to close VPN interface", e)
         }
-        stopForeground(true)
         stopSelf()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "vpn_channel",
-                "VPN Status",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
-        }
     }
 }
