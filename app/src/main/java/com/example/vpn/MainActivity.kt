@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.vpn.service.VpnServiceWrapper
 import com.example.vpn.ui.MainScreen
+import com.example.vpn.ui.MainViewModel
 import com.example.vpn.ui.NodeScreen
 import com.example.vpn.ui.SettingsScreen
 import com.example.vpn.ui.VpnViewModel
@@ -24,7 +25,9 @@ import com.example.vpn.ui.theme.VPNTheme
 import com.example.vpn.utils.V2RayConfigBuilder
 
 class MainActivity : ComponentActivity() {
+
     private val viewModel: VpnViewModel by viewModels()
+    private val mainViewModel: MainViewModel by viewModels()
 
     private val vpnPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -49,7 +52,7 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     NavHost(navController = navController, startDestination = "main") {
                         composable("main") {
-                            MainScreen(navController, viewModel) {
+                            MainScreen(navController, viewModel, mainViewModel) {
                                 if (viewModel.isConnected.value) {
                                     stopVpnService()
                                 } else {

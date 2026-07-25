@@ -20,19 +20,19 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Brush
 
 @Composable
-fun MainScreen(navController: NavController, viewModel: VpnViewModel, onConnectClick: () -> Unit) {
+fun MainScreen(navController: NavController, viewModel: VpnViewModel, mainViewModel: MainViewModel, onConnectClick: () -> Unit) {
     val isConnected by viewModel.isConnected.collectAsState()
     val activeNode by viewModel.activeNode.collectAsState()
-    var uptime by remember { mutableStateOf(0L) }
+    
+    val uptime by mainViewModel.uptime.collectAsState()
+    val downloadSpeed by mainViewModel.downloadSpeed.collectAsState()
+    val uploadSpeed by mainViewModel.uploadSpeed.collectAsState()
 
     LaunchedEffect(isConnected) {
         if (isConnected) {
-            while (true) {
-                delay(1000)
-                uptime++
-            }
+            mainViewModel.startTracking()
         } else {
-            uptime = 0
+            mainViewModel.stopTracking()
         }
     }
 
@@ -77,7 +77,6 @@ fun MainScreen(navController: NavController, viewModel: VpnViewModel, onConnectC
                 }
             }
         }
-
         Spacer(modifier = Modifier.weight(1f))
 
         // Connection Button
@@ -127,11 +126,11 @@ fun MainScreen(navController: NavController, viewModel: VpnViewModel, onConnectC
                 ) {
                     Column {
                         Text("Download", color = Color.Gray, fontSize = 12.sp)
-                        Text(if (isConnected) "1.2 MB/s" else "0 B/s", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(if (isConnected) formatSpeed(downloadSpeed) else "0 B/s", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("Upload", color = Color.Gray, fontSize = 12.sp)
-                        Text(if (isConnected) "340 KB/s" else "0 B/s", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(if (isConnected) formatSpeed(uploadSpeed) else "0 B/s", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -167,4 +166,12 @@ fun GlassCard(content: @Composable () -> Unit) {
     ) {
         content()
     }
+}
+
+fun formatSpeed(bytesPerSec: Long): String {
+    if (bytesPerSec < 1024) return "$bytesPerSec B/s"
+    val kb = bytesPerSec / 1024.0
+    if (kb < 1024) return String.format("%.1f KB/s", kb)
+    val mb = kb / 1024.0
+    return String.format("%.2f MB/s", mb)
 }

@@ -26,7 +26,6 @@ object V2RayConfigBuilder {
         val path = obj.get("path")?.asString ?: "/"
         val tls = obj.get("tls")?.asString ?: ""
         val sni = obj.get("sni")?.asString ?: host
-
         val streamSettings = buildStreamSettings(net, type, host, path, tls, sni)
 
         return """
@@ -38,6 +37,12 @@ object V2RayConfigBuilder {
               "listen": "127.0.0.1",
               "protocol": "socks",
               "settings": { "auth": "noauth", "udp": true }
+            },
+            {
+              "port": 10809,
+              "listen": "127.0.0.1",
+              "protocol": "http",
+              "settings": {}
             }
           ],
           "outbounds": [
@@ -81,6 +86,12 @@ object V2RayConfigBuilder {
               "listen": "127.0.0.1",
               "protocol": "socks",
               "settings": { "auth": "noauth", "udp": true }
+            },
+            {
+              "port": 10809,
+              "listen": "127.0.0.1",
+              "protocol": "http",
+              "settings": {}
             }
           ],
           "outbounds": [
@@ -124,6 +135,12 @@ object V2RayConfigBuilder {
               "listen": "127.0.0.1",
               "protocol": "socks",
               "settings": { "auth": "noauth", "udp": true }
+            },
+            {
+              "port": 10809,
+              "listen": "127.0.0.1",
+              "protocol": "http",
+              "settings": {}
             }
           ],
           "outbounds": [
