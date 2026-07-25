@@ -68,13 +68,16 @@ class VpnServiceWrapper : VpnService() {
                 coreController = Libv2ray.newCoreController(object : CoreCallbackHandler {
                     override fun onEmitStatus(l: Long, s: String?): Long {
                         Log.d("VpnServiceWrapper", "Status: $l $s")
-                        return 0
+                        return 0L
+                    }
+                    override fun shutdown(): Long {
+                        Log.d("VpnServiceWrapper", "Shutdown")
+                        return 0L
                     }
                 })
                 
                 // Start Loop
-                // The native API takes (String, Int). fd.toLong() is sometimes required in other wrappers, but libv2ray takes Int
-                coreController?.startLoop(config, fd)
+                coreController?.startLoop(config)
             }
         } catch (e: Exception) {
             Log.e("VpnServiceWrapper", "Failed to establish VPN", e)
