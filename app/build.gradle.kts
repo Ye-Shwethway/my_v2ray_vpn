@@ -70,5 +70,5 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // V2Ray Core Dependency
-    implementation("com.github.2dust:v2ray-core:v4.36.0")
+    implementation(files("libs/libv2ray.aar"))
 }

@@ -59,9 +59,7 @@ class VpnServiceWrapper : VpnService() {
             val fd = vpnInterface?.fd
             if (fd != null) {
                 Log.d("VpnServiceWrapper", "VPN Established, FileDescriptor: $fd")
-                // Start V2Ray core with the provided configuration and file descriptor
-                // Example pseudo-call to the V2Ray core dependency:
-                // libv2ray.Libv2ray.startV2Ray(fd, config)
+                libv2ray.Libv2ray.startV2Ray(fd, config)
             }
         } catch (e: Exception) {
             Log.e("VpnServiceWrapper", "Failed to establish VPN", e)
@@ -73,8 +71,7 @@ class VpnServiceWrapper : VpnService() {
         try {
             vpnInterface?.close()
             vpnInterface = null
-            // Stop V2Ray core
-            // libv2ray.Libv2ray.stopV2Ray()
+            libv2ray.Libv2ray.stopV2Ray()
         } catch (e: Exception) {
             Log.e("VpnServiceWrapper", "Failed to close VPN interface", e)
         }
