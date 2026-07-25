@@ -1,6 +1,5 @@
 package com.example.vpn.service
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -10,11 +9,13 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.vpn.R
+import libv2ray.Libv2ray
+import libv2ray.CoreController
+import libv2ray.CoreCallbackHandler
 
 class VpnServiceWrapper : VpnService() {
-
     private var vpnInterface: ParcelFileDescriptor? = null
+    private var coreController: CoreController? = null
 
     companion object {
         const val ACTION_START = "com.example.vpn.START"
@@ -59,7 +60,21 @@ class VpnServiceWrapper : VpnService() {
             val fd = vpnInterface?.fd
             if (fd != null) {
                 Log.d("VpnServiceWrapper", "VPN Established, FileDescriptor: $fd")
-                libv2ray.Libv2ray.startV2Ray(fd, config)
+                
+                // Initialize Core Environment
+                Libv2ray.initCoreEnv(applicationContext.filesDir.absolutePath, "nexus-proxy-key")
+                
+                // Initialize Controller
+                coreController = Libv2ray.newCoreController(object : CoreCallbackHandler {
+                    override fun onEmitStatus(l: Long, s: String?): Long {
+                        Log.d("VpnServiceWrapper", "Status: $l $s")
+                        return 0
+                    }
+                })
+                
+                // Start Loop
+                // The native API takes (String, Int). fd.toLong() is sometimes required in other wrappers, but libv2ray takes Int
+                coreController?.startLoop(config, fd)
             }
         } catch (e: Exception) {
             Log.e("VpnServiceWrapper", "Failed to establish VPN", e)
@@ -69,9 +84,11 @@ class VpnServiceWrapper : VpnService() {
 
     private fun stopVpn() {
         try {
+            coreController?.stopLoop()
+            coreController = null
+            
             vpnInterface?.close()
             vpnInterface = null
-            libv2ray.Libv2ray.stopV2Ray()
         } catch (e: Exception) {
             Log.e("VpnServiceWrapper", "Failed to close VPN interface", e)
         }

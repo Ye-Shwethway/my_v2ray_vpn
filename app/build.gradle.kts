@@ -69,6 +69,6 @@ dependencies {
     // DataStore for Settings
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    // V2Ray Core Dependency
-    implementation(files("libs/libv2ray.aar"))
+    // Remote Core: Fetching libv2ray.aar via Ivy layout from Github Releases
+    implementation("2dust:libv2ray:v5.52.0@aar")
 }
