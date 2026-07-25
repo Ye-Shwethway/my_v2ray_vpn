@@ -74,6 +74,10 @@ class VpnServiceWrapper : VpnService() {
                         Log.d("VpnServiceWrapper", "Shutdown")
                         return 0L
                     }
+                    override fun startup(): Long {
+                        Log.d("VpnServiceWrapper", "Startup")
+                        return 0L
+                    }
                 })
                 
                 // Start Loop
