@@ -20,8 +20,9 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Brush
 
 @Composable
-fun MainScreen(navController: NavController) {
-    var isConnected by remember { mutableStateOf(false) }
+fun MainScreen(navController: NavController, viewModel: VpnViewModel, onConnectClick: () -> Unit) {
+    val isConnected by viewModel.isConnected.collectAsState()
+    val activeNode by viewModel.activeNode.collectAsState()
     var uptime by remember { mutableStateOf(0L) }
 
     LaunchedEffect(isConnected) {
@@ -89,7 +90,7 @@ fun MainScreen(navController: NavController) {
                     else Color(0xFF3B82F6).copy(alpha = 0.2f)
                 )
                 .padding(24.dp)
-                .clickable { isConnected = !isConnected },
+                .clickable { onConnectClick() },
             contentAlignment = Alignment.Center
         ) {
             Box(
@@ -140,7 +141,7 @@ fun MainScreen(navController: NavController) {
                 ) {
                     Column {
                         Text("Active Node", color = Color.Gray, fontSize = 12.sp)
-                        Text("Tokyo - Premium", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(activeNode?.name ?: "None Selected", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("Uptime", color = Color.Gray, fontSize = 12.sp)

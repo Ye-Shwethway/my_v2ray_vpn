@@ -15,9 +15,12 @@ import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavController) {
-    var bypassLan by remember { mutableStateOf(true) }
-    var globalMode by remember { mutableStateOf(false) }
+fun SettingsScreen(navController: NavController, viewModel: VpnViewModel) {
+    val bypassLan by viewModel.bypassLan.collectAsState(initial = true)
+    val globalMode by viewModel.globalMode.collectAsState(initial = false)
+    val primaryDns by viewModel.primaryDns.collectAsState(initial = "1.1.1.1")
+    val secondaryDns by viewModel.secondaryDns.collectAsState(initial = "8.8.8.8")
+    val mtuSize by viewModel.mtuSize.collectAsState(initial = "1500")
 
     Column(
         modifier = Modifier
@@ -44,7 +47,7 @@ fun SettingsScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Bypass Local LAN", color = Color.White)
-                    Switch(checked = bypassLan, onCheckedChange = { bypassLan = it })
+                    Switch(checked = bypassLan, onCheckedChange = { viewModel.updateSetting("bypass_lan", it) })
                 }
                 
                 Row(
@@ -52,7 +55,7 @@ fun SettingsScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Global Proxy", color = Color.White)
-                    Switch(checked = globalMode, onCheckedChange = { globalMode = it })
+                    Switch(checked = globalMode, onCheckedChange = { viewModel.updateSetting("global_mode", it) })
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -60,8 +63,8 @@ fun SettingsScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 OutlinedTextField(
-                    value = "1.1.1.1",
-                    onValueChange = {},
+                    value = primaryDns,
+                    onValueChange = { viewModel.updateSetting("primary_dns", it) },
                     label = { Text("Primary DNS") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -71,8 +74,8 @@ fun SettingsScreen(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = "8.8.8.8",
-                    onValueChange = {},
+                    value = secondaryDns,
+                    onValueChange = { viewModel.updateSetting("secondary_dns", it) },
                     label = { Text("Secondary DNS") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -80,14 +83,13 @@ fun SettingsScreen(navController: NavController) {
                         unfocusedTextColor = Color.White
                     )
                 )
-
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("Advanced", color = Color(0xFF3B82F6), fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 OutlinedTextField(
-                    value = "1500",
-                    onValueChange = {},
+                    value = mtuSize,
+                    onValueChange = { viewModel.updateSetting("mtu_size", it) },
                     label = { Text("MTU Size") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
