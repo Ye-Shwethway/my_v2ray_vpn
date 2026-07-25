@@ -14,6 +14,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -66,6 +67,12 @@ dependencies {
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
     
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
+    
+    // Gson
+    implementation("com.google.code.gson:gson:2.10.1")
+
     // DataStore for Settings
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 

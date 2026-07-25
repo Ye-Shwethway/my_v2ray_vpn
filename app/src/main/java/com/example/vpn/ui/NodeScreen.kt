@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,58 +24,71 @@ import com.example.vpn.data.ServerNode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NodeScreen(navController: NavController, viewModel: VpnViewModel) {
-    var subUrl by remember { mutableStateOf("") }
     val nodes by viewModel.allNodes.collectAsState(initial = emptyList())
+    val subs by viewModel.allSubscriptions.collectAsState(initial = emptyList())
     val activeNode by viewModel.activeNode.collectAsState()
+    
+    var showAddDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0F172A))
-    ) {
-        TopAppBar(
-            title = { Text("Server Nodes", color = Color.White) },
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-        )
-
-        Column(modifier = Modifier.padding(16.dp)) {
-            OutlinedTextField(
-                value = subUrl,
-                onValueChange = { subUrl = it },
-                placeholder = { Text("Paste Subscription URL (VMess/VLESS/Trojan)") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF3B82F6),
-                    unfocusedBorderColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Button(
-                onClick = { 
-                    viewModel.addNode(ServerNode(name = "New Node", address = subUrl, port = 443, protocol = "vmess", uuid = "fake-uuid")) 
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Server Nodes", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                actions = {
+                    TextButton(onClick = { viewModel.updateAllSubscriptions() }) {
+                        Text("Update All", color = Color(0xFF3B82F6))
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = Color(0xFF3B82F6)
             ) {
-                Text("Fetch & Update")
+                Icon(Icons.Default.Add, contentDescription = "Add Subscription", tint = Color.White)
+            }
+        },
+        containerColor = Color(0xFF0F172A)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+        ) {
+            if (subs.isNotEmpty()) {
+                Text("Subscriptions (${subs.size})", color = Color.Gray, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 120.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(subs) { sub ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = 0.05f))
+                                .padding(12.dp)
+                        ) {
+                            Text(sub.name, color = Color.White, fontSize = 14.sp)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Available Nodes", color = Color.Gray, fontWeight = FontWeight.Bold)
+            Text("Available Nodes (${nodes.size})", color = Color.Gray, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-
             LazyColumn(
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(nodes) { node ->
@@ -85,6 +99,48 @@ fun NodeScreen(navController: NavController, viewModel: VpnViewModel) {
                     )
                 }
             }
+        }
+        
+        if (showAddDialog) {
+            var newUrl by remember { mutableStateOf("") }
+            var newName by remember { mutableStateOf("") }
+            
+            AlertDialog(
+                onDismissRequest = { showAddDialog = false },
+                title = { Text("Add Subscription") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text("Name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = newUrl,
+                            onValueChange = { newUrl = it },
+                            label = { Text("URL") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (newUrl.isNotBlank() && newName.isNotBlank()) {
+                            viewModel.addSubscription(newUrl, newName)
+                            viewModel.updateAllSubscriptions()
+                            showAddDialog = false
+                        }
+                    }) {
+                        Text("Save")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showAddDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }
@@ -104,11 +160,13 @@ fun NodeItem(node: ServerNode, isActive: Boolean, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(node.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(node.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                 Text(node.protocol.uppercase(), color = Color.Gray, fontSize = 12.sp)
             }
-            Text("${node.latency}ms", color = Color(0xFF10B981), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            if (node.latency >= 0) {
+                Text("${node.latency}ms", color = Color(0xFF10B981), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

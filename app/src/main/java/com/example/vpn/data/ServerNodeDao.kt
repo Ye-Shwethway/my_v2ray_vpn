@@ -14,7 +14,13 @@ interface ServerNodeDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNode(node: ServerNode)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNodes(nodes: List<ServerNode>)
 
     @Delete
     suspend fun deleteNode(node: ServerNode)
+    
+    @Query("DELETE FROM server_nodes WHERE subId = :subId")
+    suspend fun deleteBySubId(subId: Int)
 }

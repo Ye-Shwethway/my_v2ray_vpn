@@ -21,6 +21,7 @@ import com.example.vpn.ui.NodeScreen
 import com.example.vpn.ui.SettingsScreen
 import com.example.vpn.ui.VpnViewModel
 import com.example.vpn.ui.theme.VPNTheme
+import com.example.vpn.utils.V2RayConfigBuilder
 
 class MainActivity : ComponentActivity() {
     private val viewModel: VpnViewModel by viewModels()
@@ -37,6 +38,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.seedSubscriptions(this)
+        
         setContent {
             VPNTheme {
                 Surface(
@@ -72,41 +75,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startVpnService() {
-        viewModel.setConnected(true)
         val activeNode = viewModel.activeNode.value
-        val address = activeNode?.address ?: "127.0.0.1"
-        val port = activeNode?.port ?: 443
-        val uuid = activeNode?.uuid ?: "00000000-0000-0000-0000-000000000000"
+        if (activeNode == null) return
         
-        val config = """
-        {
-          "log": { "loglevel": "warning" },
-          "inbounds": [
-            {
-              "port": 10808,
-              "listen": "127.0.0.1",
-              "protocol": "socks",
-              "settings": { "auth": "noauth", "udp": true }
-            }
-          ],
-          "outbounds": [
-            {
-              "protocol": "vmess",
-              "settings": {
-                "vnext": [
-                  {
-                    "address": "$address",
-                    "port": $port,
-                    "users": [
-                      { "id": "$uuid", "alterId": 0, "security": "auto" }
-                    ]
-                  }
-                ]
-              }
-            }
-          ]
-        }
-        """.trimIndent()
+        viewModel.setConnected(true)
+        val config = V2RayConfigBuilder.buildConfig(activeNode)
         
         val intent = Intent(this, VpnServiceWrapper::class.java).apply {
             action = VpnServiceWrapper.ACTION_START
